@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Script: databackup.sh
-# Version: 1.0
+# Version: 1.1
 #
 # Purpose:
 # Perform an Automatic Backup based on inputs provided in a Config file.
@@ -21,6 +21,10 @@
 #
 # Modification Log:
 #    v1.0      Nov 25, 2012    Initial version
+#
+#    v1.1      Jan 14, 2013    Fixed some bugs where the usage was getting printed multiple
+#                              times and the number of days for the directory backup was
+#                              yielding negative numbers when the year changes.
 #
 
 print_usage()
@@ -89,8 +93,10 @@ backup_db()
       echo "Database backed up to ${BKPATTR3}/BKP${BKPTYPE}_${BKPATTR1}_${TMTODAY}.tar" >> ${MAILFILE}
 
       rm "${BKPATTR3}/BKPFULL_${BKPTYPE}_${BKPATTR1}_${TMTODAY}.sql"
+      return 0
    else
       echo "Error in Database backup." >> ${MAILFILE}
+      return 1
    fi
 
 }
@@ -124,7 +130,7 @@ backup_dir()
       # Perform Incremental Backup
 
       echo "Backup was last run on ${LASTRUN}" >> ${MAILFILE}
-      DAYSLAST=`expr $(date -d "${DTTODAY}" +%j) - $(date -d "${LASTRUN}" +%j) + 1`
+      DAYSLAST=$((($(date -u -d "${DTTODAY}" +%s) - $(date -u -d "${LASTRUN}" +%s)) / 86400))
 
       echo "Days since last run ${DAYSLAST}" >> ${MAILFILE}
 
@@ -152,10 +158,12 @@ backup_dir()
 
       rm -f ${CNFGTEMP}
 
+      echo "Backed up the directory." >> ${MAILFILE}
+      return 0
+   else
+      echo "Error while backing up directory!" >> ${MAILFILE}
+      return 1
    fi
-   
-   echo "Backed up the directory." >> ${MAILFILE}
-
 }
 
 export CNFGFILE
@@ -190,6 +198,7 @@ then
    shift
 else
    print_usage >> ${MAILFILE}
+   exit 1
 fi
 
 if [ "$1" ]
@@ -260,6 +269,7 @@ then
    fi
 else
    print_usage >> ${MAILFILE}
+   exit 1
 fi
 
 cat ${MAILFILE} | mail -s "Backup Completed!" ${MAILADDR}
