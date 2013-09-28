@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Script: databackup.sh
-# Version: 1.1
+# Version: 1.2
 #
 # Purpose:
 # Perform an Automatic Backup based on inputs provided in a Config file.
@@ -25,6 +25,10 @@
 #    v1.1      Jan 14, 2013    Fixed some bugs where the usage was getting printed multiple
 #                              times and the number of days for the directory backup was
 #                              yielding negative numbers when the year changes.
+#
+#    v1.2      Mar 16, 2013    Included the --create-options option in the mysqldump command
+#                              to ensure that the auto increment parameter is not skipped in
+#                              dump file.
 #
 
 print_usage()
@@ -81,7 +85,7 @@ backup_db()
    echo "Dumping Database " >> ${MAILFILE}
    echo " " >> ${MAILFILE}
 
-   mysqldump -u ${DB_BACKUP_USER} -h ${DB_HOST} --skip-opt --add-drop-table --complete-insert --extended-insert --single-transaction --result-file="${BKPATTR3}/BKPFULL_${BKPTYPE}_${BKPATTR1}_${TMTODAY}.sql" ${BKPATTR2}
+   mysqldump -u ${DB_BACKUP_USER} -h ${DB_HOST} --skip-opt --add-drop-table --create-options --complete-insert --extended-insert --single-transaction --result-file="${BKPATTR3}/BKPFULL_${BKPTYPE}_${BKPATTR1}_${TMTODAY}.sql" ${BKPATTR2}
 
    cd ${BKPATTR3}
    tar --create --verbose --file "BKPFULL_${BKPTYPE}_${BKPATTR1}_${TMTODAY}.tar" "BKPFULL_${BKPTYPE}_${BKPATTR1}_${TMTODAY}.sql"
